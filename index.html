@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GlyphForge — QR Generator</title>
+  <link rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23ff2d6f'/%3E%3Ctext x='50' y='58' font-size='48' text-anchor='middle' fill='white' font-family='Arial'%3EG%3C/text%3E%3C/svg%3E">
+  <meta name="description"
+    content="GlyphForge — fast, beautiful QR code generator with logo, styles, history and downloadable PNG/SVG." />
+
+  <!-- QRCode library -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+
+  <style>
+    /* -------------------- Base & Animated Techy Background -------------------- */
+    :root {
+      --bg1: #07070a;
+      --bg2: #0f0f18;
+      --accent: #00ffd5;
+      --accent2: #ff2d6f;
+      --card: #0f1016;
+      --glass: rgba(255, 255, 255, 0.04)
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      color: #e6eef6;
+      background: linear-gradient(135deg, var(--bg1), var(--bg2));
+      -webkit-font-smoothing: antialiased
+    }
+
+    /* animated gradient + subtle grid by pseudo layers */
+    .bg-wrap {
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      overflow: hidden
+    }
+
+    .plasma {
+      position: absolute;
+      inset: -20%;
+      filter: blur(60px);
+      opacity: 0.6;
+      background: radial-gradient(circle at 20% 20%, #0ff 0, transparent 18%), radial-gradient(circle at 80% 70%, #ff2d6f 0, transparent 20%);
+      animation: float 12s linear infinite
+    }
+
+    .grid {
+      position: absolute;
+      inset: 0;
+      background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 32px 32px, 32px 32px;
+      mix-blend-mode: overlay;
+      opacity: 0.45
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(0)
+      }
+
+      50% {
+        transform: translateY(-6%)
+      }
+
+      100% {
+        transform: translateY(0)
+      }
+    }
+
+    /* container */
+    .wrap {
+      max-width: 1100px;
+      margin: 36px auto;
+      padding: 28px;
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 26px
+    }
+
+    @media (max-width:980px) {
+      .wrap {
+        grid-template-columns: 1fr;
+        padding: 18px
+      }
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 6px 30px rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.03)
+    }
+
+    .brand {
+      display: flex;
+      gap: 12px;
+      align-items: center
+    }
+
+    .logo {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #081018;
+      font-weight: 700;
+      font-size: 28px;
+      box-shadow: 0 6px 20px rgba(255, 45, 111, 0.12)
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px
+    }
+
+    p.lead {
+      margin: 6px 0 12px;
+      color: #9fb3c6;
+      font-size: 13px
+    }
+
+    /* form styles */
+    label {
+      display: block;
+      font-size: 13px;
+      margin: 10px 0 6px;
+      color: #bcd4e6
+    }
+
+    input[type="text"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      background: var(--card);
+      color: inherit;
+      font-size: 15px;
+      outline: 2px solid transparent
+    }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical
+    }
+
+    .row {
+      display: flex;
+      gap: 10px
+    }
+
+    .col {
+      flex: 1
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px
+    }
+
+    .btn {
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      color: #04121c;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 700;
+      cursor: pointer
+    }
+
+    .btn.ghost {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid rgba(255, 255, 255, 0.05)
+    }
+
+    /* preview card */
+    .preview {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 18px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), transparent);
+      text-align: center
+    }
+
+    #qrcanvas {
+      background: white;
+      border-radius: 8px;
+      padding: 8px
+    }
+
+    .meta {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: #9fb3c6
+    }
+
+    /* history */
+    .history {
+      margin-top: 18px
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.02);
+      font-size: 13px;
+      margin-top: 8px
+    }
+
+    .chip {
+      padding: 6px 8px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.35);
+      font-size: 12px
+    }
+
+    /* small helpers */
+    .muted {
+      color: #87a5bd;
+      font-size: 13px
+    }
+
+    .flex {
+      display: flex;
+      gap: 12px;
+      align-items: center
+    }
+
+    .right {
+      text-align: right
+    }
+
+    footer {
+      margin-top: 16px;
+      color: #6f8aa0;
+      font-size: 12px;
+      text-align: center
+    }
+
+    /* nice input-file */
+    .file {
+      display: flex;
+      gap: 10px;
+      align-items: center
+    }
+
+    .file input[type=file] {
+      display: none
+    }
+
+    .file .upload {
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      font-size: 13px
+    }
+
+    /* subtle animation for buttons */
+    .btn:active {
+      transform: translateY(1px)
+    }
+  </style>
+</head>
+
+<body>
+  <div class="bg-wrap">
+    <div class="plasma"></div>
+    <div class="grid"></div>
+  </div>
+
+  <main class="wrap">
+
+    <!-- LEFT: Generator Form -->
+    <section class="panel">
+      <div class="brand">
+        <div class="logo">G</div>
+        <div>
+          <h1>GlyphForge</h1>
+          <p class="lead">Create beautiful, brandable QR codes — with logo overlays, color themes, downloadable PNG/SVG
+            and local history.</p>
+        </div>
+      </div>
+
+      <label for="mode">Type</label>
+      <select id="mode">
+        <option value="text">Plain Text</option>
+        <option value="url" selected>URL</option>
+        <option value="email">Email</option>
+        <option value="phone">Phone</option>
+        <option value="vcard">vCard</option>
+        <option value="wifi">Wi‑Fi</option>
+      </select>
+
+      <label for="payload">Content</label>
+      <textarea id="payload"
+        placeholder="Enter the text or fill fields for vCard/Wi‑Fi...">https://example.com</textarea>
+
+      <div class="row">
+        <div class="col">
+          <label for="fg">Foreground</label>
+          <input type="color" id="fg" value="#04121c">
+        </div>
+        <div class="col">
+          <label for="bg">Background</label>
+          <input type="color" id="bg" value="#ffffff">
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <div class="col">
+          <label for="size">Size (px)</label>
+          <input type="range" id="size" min="160" max="1200" value="420">
+        </div>
+        <div style="width:120px;">
+          <label for="ec">Error Corr.</label>
+          <select id="ec">
+            <option value="M">M (15%)</option>
+            <option value="L">L (7%)</option>
+            <option value="Q">Q (25%)</option>
+            <option value="H" selected>H (30%)</option>
+          </select>
+        </div>
+      </div>
+
+      <label style="margin-top:12px;">Logo (optional)</label>
+      <div class="file">
+        <label class="upload btn ghost" id="uploadBtn">Upload Logo</label>
+        <input type="file" id="logoFile" accept="image/*">
+        <div class="muted">Max: 200×200 px (recommended)</div>
+      </div>
+
+      <div class="controls">
+        <button class="btn" id="gen">Generate</button>
+        <button class="btn ghost" id="reset">Reset</button>
+      </div>
+
+      <div class="muted" style="margin-top:12px;">Tip: Use high-contrast colors and keep the logo small (10–18% of QR
+        size) for best scanning reliability.</div>
+
+      <div class="history">
+        <h3 style="margin:14px 0 6px">History</h3>
+        <div id="historyList"></div>
+      </div>
+
+      <footer>Made with ⚡ GlyphForge — fast, memorable QR creation.</footer>
+    </section>
+
+    <!-- RIGHT: Preview & Download -->
+    <aside class="panel preview">
+      <div class="meta">
+        <div><strong>Preview</strong></div>
+        <div class="muted">Scan & Check</div>
+      </div>
+
+      <canvas id="qrcanvas" width="500" height="500"></canvas>
+
+      <div class="flex" style="width:100%;justify-content:space-between;align-items:center">
+        <div class="right">
+          <div class="muted">Format</div>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <button class="btn ghost" id="downloadPNG">PNG</button>
+            <button class="btn ghost" id="downloadSVG">SVG</button>
+          </div>
+        </div>
+        <div style="width:40%;text-align:right">
+          <div class="muted">Size</div>
+          <div id="sizeLabel">200px</div>
+        </div>
+      </div>
+<br>
+<br>
+<br>
+<br>
+<br/>
+<br/>
+<div style="text-align: center;">
+    <a href="contact.html" target="_blank" style="text-decoration:none; color:#00eaff;">
+        Contact Us
+    </a>
+</div>
+
+    </aside>
+  </main>
+
+  <script>
+    // -------------------- Utilities & DOM --------------------
+    const modeEl = document.getElementById('mode');
+    const payloadEl = document.getElementById('payload');
+    const fgEl = document.getElementById('fg');
+    const bgEl = document.getElementById('bg');
+    const sizeEl = document.getElementById('size');
+    const sizeLabel = document.getElementById('sizeLabel');
+    const ecEl = document.getElementById('ec');
+    const genBtn = document.getElementById('gen');
+    const resetBtn = document.getElementById('reset');
+    const canvas = document.getElementById('qrcanvas');
+    const downloadPNG = document.getElementById('downloadPNG');
+    const downloadSVG = document.getElementById('downloadSVG');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const logoFile = document.getElementById('logoFile');
+    const historyList = document.getElementById('historyList');
+
+    let logoImg = null;
+    let lastData = null;
+
+    sizeEl.addEventListener('input', () => { sizeLabel.textContent = sizeEl.value + ' px'; updatePreview(); });
+
+    
+    uploadBtn.addEventListener('click', () => logoFile.click());
+    logoFile.addEventListener('change', async (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      const img = new Image();
+      img.onload = () => { logoImg = img; updatePreview(); };
+      img.onerror = () => { alert('Unable to load logo image'); };
+      img.src = URL.createObjectURL(f);
+    });
+
+    resetBtn.addEventListener('click', () => {
+      payloadEl.value = '';
+      fgEl.value = '#04121c';
+      bgEl.value = '#ffffff';
+      sizeEl.value = 420; sizeLabel.textContent = '420 px';
+      logoImg = null; logoFile.value = '';
+      updatePreview();
+    });
+
+    // -------------------- Smart Payload builder for structured types --------------------
+    modeEl.addEventListener('change', () => {
+      const m = modeEl.value;
+      if (m === 'url') payloadEl.value = 'https://example.com';
+      else if (m === 'email') payloadEl.value = 'mail@example.com';
+      else if (m === 'phone') payloadEl.value = '+1234567890';
+      else if (m === 'vcard') payloadEl.value = 'FN:John Doe\nORG:Company\nTITLE:Dev\nTEL:+1234567890\nEMAIL:john@example.com\nADR:;;City;State;12345;Country';
+      else if (m === 'wifi') payloadEl.value = 'WIFI:T:WPA;S:YourNetwork;P:password;;';
+      else payloadEl.value = '';
+      updatePreview();
+    });
+
+    // -------------------- QR Generation & Canvas render --------------------
+    async function updatePreview() {
+      const text = payloadEl.value || '';
+      const size = parseInt(sizeEl.value, 10) || 420;
+      const fg = fgEl.value || '#04121c';
+      const bg = bgEl.value || '#ffffff';
+      const ec = ecEl.value || 'H';
+
+      // Clear canvas
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, size, size);
+
+      if (!text) return;
+
+      const options = { errorCorrectionLevel: ec, margin: 1, color: { dark: fg, light: bg } }
+
+      // draw QR to an offscreen canvas using qrcode lib
+      try {
+        // create temporary canvas element for QR module rendering
+        const temp = document.createElement('canvas');
+        await QRCode.toCanvas(temp, text, { width: size, margin: 1, color: { dark: fg, light: bg }, errorCorrectionLevel: ec });
+
+        // draw temp onto real canvas
+        ctx.drawImage(temp, 0, 0, size, size);
+
+        // if logo exists, overlay with automatic scaling and rounded mask
+        if (logoImg) {
+          const maxLogo = Math.floor(size * 0.18); // keep logo small for scannability
+          let lw = logoImg.width, lh = logoImg.height;
+          const scale = Math.min(maxLogo / lw, maxLogo / lh, 1);
+          lw = Math.floor(lw * scale); lh = Math.floor(lh * scale);
+          const lx = Math.floor((size - lw) / 2); const ly = Math.floor((size - lh) / 2);
+
+          // draw white rounded background behind logo to improve contrast
+          const pad = 8;
+          const rr = 12;
+          ctx.fillStyle = bg;
+          roundRect(ctx, lx - pad, ly - pad, lw + pad * 2, lh + pad * 2, rr);
+          ctx.fill();
+
+          // draw logo
+          ctx.save();
+          roundClip(ctx, lx, ly, lw, lh, 8);
+          ctx.drawImage(logoImg, lx, ly, lw, lh);
+          ctx.restore();
+        }
+
+        lastData = { text, size, fg, bg, ec };
+
+      } catch (err) {
+        console.error('QR render failed', err);
+      }
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+    }
+    function roundClip(ctx, x, y, w, h, r) { ctx.beginPath(); roundRect(ctx, x, y, w, h, r); ctx.clip(); }
+
+    // -------------------- Downloads --------------------
+    function downloadPNGHandler() {
+      if (!lastData) { alert('Generate a QR first'); return; }
+      const link = document.createElement('a');
+      link.download = `glyphforge_${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    async function downloadSVGHandler() {
+      if (!lastData) { alert('Generate a QR first'); return; }
+      const svgString = await QRCode.toString(lastData.text, { type: 'svg', errorCorrectionLevel: lastData.ec, margin: 1, color: { dark: lastData.fg, light: lastData.bg }, width: lastData.size });
+      // If a logo exists we cannot easily embed it perfectly into the SVG; so we provide the plain SVG QR and advise overlay clientside.
+      const blob = new Blob([svgString], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `glyphforge_${Date.now()}.svg`; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+
+    // -------------------- History (localStorage) --------------------
+    function saveHistoryItem(item) {
+      const HKEY = 'glyphforge_history_v1';
+      const cur = JSON.parse(localStorage.getItem(HKEY) || '[]');
+      cur.unshift({ id: Date.now(), title: (item.title || item.text).slice(0, 60), data: item });
+      localStorage.setItem(HKEY, JSON.stringify(cur.slice(0, 30)));
+      renderHistory();
+    }
+    function renderHistory() {
+      const HKEY = 'glyphforge_history_v1';
+      const cur = JSON.parse(localStorage.getItem(HKEY) || '[]');
+      historyList.innerHTML = '';
+      cur.forEach(h => {
+        const div = document.createElement('div'); div.className = 'history-item';
+        const left = document.createElement('div'); left.style.maxWidth = '70%'; left.textContent = h.title;
+        const right = document.createElement('div'); right.style.display = 'flex'; right.style.gap = '8px';
+        const btnR = document.createElement('button'); btnR.className = 'btn ghost'; btnR.textContent = 'Use'; btnR.onclick = () => { useHistory(h.data); };
+        const btnD = document.createElement('button'); btnD.className = 'btn ghost'; btnD.textContent = 'Del'; btnD.onclick = () => { deleteHistory(h.id); };
+        right.appendChild(btnR); right.appendChild(btnD);
+        div.appendChild(left); div.appendChild(right);
+        historyList.appendChild(div);
+      });
+    }
+    function deleteHistory(id) { const HKEY = 'glyphforge_history_v1'; const cur = JSON.parse(localStorage.getItem(HKEY) || '[]').filter(i => i.id !== id); localStorage.setItem(HKEY, JSON.stringify(cur)); renderHistory(); }
+    function useHistory(data) { payloadEl.value = data.text || ''; fgEl.value = data.fg || '#04121c'; bgEl.value = data.bg || '#ffffff'; sizeEl.value = data.size || 420; ecEl.value = data.ec || 'H'; updatePreview(); }
+
+    // -------------------- Generate button logic --------------------
+    genBtn.addEventListener('click', async () => {
+      // If structured types (vcard,wifi,email,phone) we accept the payload as-is — it's the user's responsibility to use correct syntax when necessary.
+      const payload = payloadEl.value.trim();
+      if (!payload) { alert('Please add content to encode'); return; }
+
+      await updatePreview();
+      // Save to history (short metadata)
+      saveHistoryItem({ text: payload, title: `${modeEl.value.toUpperCase()}: ${payload.slice(0, 80)}`, fg: fgEl.value, bg: bgEl.value, size: parseInt(sizeEl.value, 10), ec: ecEl.value });
+    });
+
+    // -------------------- Downloads wiring --------------------
+    downloadPNG.addEventListener('click', downloadPNGHandler);
+    downloadSVG.addEventListener('click', downloadSVGHandler);
+
+
+    // -------------------- Init --------------------
+    (function init() { renderHistory(); updatePreview(); })();
+
+  </script>
+  <footer style="text-align:center; padding:15px; margin-top:20px; background:#12121a; color:#fff; border-top: 2px solid #00eaff; border-radius:8px;">
+  🚀 Hosted by <strong>
+    <a href="https://www.youtube.com/@TechZnoTalks" target="_blank" style="color:#00ffff; text-decoration:none;">
+      TechZnoTalks
+    </a>
+  </strong> — Empowering Smart Tools for Everyone.
+</footer>
+
+  <div style="text-align: center; margin-top: 10px;">
+    <a href="terms.html" target="_blank" style="text-decoration:none; color:#00eaff;">
+        Terms & Conditions
+    </a>
+</div>
+
+
+</body>
+
+</html>
