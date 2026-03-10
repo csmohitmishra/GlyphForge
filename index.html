@@ -287,7 +287,49 @@
     .btn:active {
       transform: translateY(1px)
     }
+
+
+    /* QR Frame Styles */
+    .qr-frame {
+      padding: 15px;
+      display: inline-block;
+      border-radius: 12px;
+      transition: 0.3s;
+    }
+
+    .frame-tech {
+      border: 4px solid #00f7ff;
+      box-shadow: 0 0 15px #00f7ff;
+    }
+
+    .frame-neon {
+      border: 4px solid #ff00ff;
+      box-shadow: 0 0 20px #ff00ff;
+    }
+
+    .frame-minimal {
+      border: 2px solid #aaa;
+    }
+
+    .frame-double {
+      border: 6px double #00ffcc;
+    }
+
+    .frame-dots {
+      border: 4px dotted #ffaa00;
+    }
+
+    .frame-glow {
+      border: 3px solid #00ff00;
+      box-shadow: 0 0 25px #00ff00;
+    }
+
+    .frame-cyber {
+      border: 4px solid #00ffff;
+      box-shadow: 0 0 10px #00ffff inset;
+    }
   </style>
+
 </head>
 
 <body>
@@ -332,6 +374,18 @@
           <label for="bg">Background</label>
           <input type="color" id="bg" value="#ffffff">
         </div>
+
+        <label>QR frame</label>
+        <select id="frameSelector" onchange="applyFrame()">
+          <option value="none">No Frame</option>
+          <option value="tech">Tech Frame</option>
+          <option value="neon">Neon Frame</option>
+          <option value="minimal">Minimal Frame</option>
+          <option value="double">Double Border</option>
+          <option value="dots">Dot Frame</option>
+          <option value="glow">Glow Frame</option>
+          <option value="cyber">Cyber Frame</option>
+        </select>
       </div>
 
       <div class="row" style="margin-top:10px;">
@@ -380,7 +434,9 @@
         <div class="muted">Scan & Check</div>
       </div>
 
-      <canvas id="qrcanvas" width="500" height="500"></canvas>
+      <div id="qrFrame" class="qr-frame">
+        <canvas id="qrcanvas" width="500" height="500"></canvas>
+      </div>
 
       <div class="flex" style="width:100%;justify-content:space-between;align-items:center">
         <div class="right">
@@ -395,17 +451,17 @@
           <div id="sizeLabel">200px</div>
         </div>
       </div>
-<br>
-<br>
-<br>
-<br>
-<br/>
-<br/>
-<div style="text-align: center;">
-    <a href="contact.html" target="_blank" style="text-decoration:none; color:#00eaff;">
-        Contact Us
-    </a>
-</div>
+      <br>
+      <br>
+      <br>
+      <br>
+      <br />
+      <br />
+      <div style="text-align: center;">
+        <a href="contact.html" target="_blank" style="text-decoration:none; color:#00eaff;">
+          Contact Us
+        </a>
+      </div>
 
     </aside>
   </main>
@@ -433,7 +489,7 @@
 
     sizeEl.addEventListener('input', () => { sizeLabel.textContent = sizeEl.value + ' px'; updatePreview(); });
 
-    
+
     uploadBtn.addEventListener('click', () => logoFile.click());
     logoFile.addEventListener('change', async (e) => {
       const f = e.target.files[0];
@@ -528,12 +584,69 @@
     // -------------------- Downloads --------------------
     function downloadPNGHandler() {
       if (!lastData) { alert('Generate a QR first'); return; }
-      const link = document.createElement('a');
+
+      const frame = document.getElementById("frameSelector")?.value || "none";
+
+      const padding = 40;
+      const tempCanvas = document.createElement("canvas");
+      const ctx = tempCanvas.getContext("2d");
+
+      tempCanvas.width = canvas.width + padding * 2;
+      tempCanvas.height = canvas.height + padding * 2;
+
+      // background
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+      // draw QR
+      ctx.drawImage(canvas, padding, padding);
+
+      // draw frame
+      ctx.lineWidth = 10;
+
+      switch (frame) {
+
+        case "tech":
+          ctx.strokeStyle = "#00f7ff";
+          break;
+
+        case "neon":
+          ctx.strokeStyle = "#ff00ff";
+          break;
+
+        case "minimal":
+          ctx.strokeStyle = "#888";
+          break;
+
+        case "double":
+          ctx.strokeStyle = "#00ffcc";
+          ctx.lineWidth = 14;
+          break;
+
+        case "dots":
+          ctx.strokeStyle = "#ffaa00";
+          ctx.setLineDash([10, 6]);
+          break;
+
+        case "glow":
+          ctx.strokeStyle = "#00ff00";
+          break;
+
+        case "cyber":
+          ctx.strokeStyle = "#00ffff";
+          break;
+
+        default:
+          ctx.strokeStyle = "transparent";
+      }
+
+      ctx.strokeRect(5, 5, tempCanvas.width - 10, tempCanvas.height - 10);
+
+      const link = document.createElement("a");
       link.download = `glyphforge_${Date.now()}.png`;
-      link.href = canvas.toDataURL('image/png');
+      link.href = tempCanvas.toDataURL("image/png");
       link.click();
     }
-
     async function downloadSVGHandler() {
       if (!lastData) { alert('Generate a QR first'); return; }
       const svgString = await QRCode.toString(lastData.text, { type: 'svg', errorCorrectionLevel: lastData.ec, margin: 1, color: { dark: lastData.fg, light: lastData.bg }, width: lastData.size });
@@ -589,20 +702,43 @@
     // -------------------- Init --------------------
     (function init() { renderHistory(); updatePreview(); })();
 
+    // -------------------- Warning Modal Logic --------------------
+    function acceptWarning() {
+      localStorage.setItem('glyphforge_warning_accepted', 'true');
+      document.getElementById('warningModal').style.display = 'none';
+    }
+
+    // Them offering a selection of stylish frames to enhance the QR code's appearance while maintaining scannability.
+    function applyFrame() {
+
+      let frame = document.getElementById("frameSelector").value;
+      let qrBox = document.getElementById("qrFrame");
+
+      qrBox.className = "qr-frame";
+
+      if (frame !== "none") {
+        qrBox.classList.add("frame-" + frame);
+      }
+
+    }
+
+
+
   </script>
-  <footer style="text-align:center; padding:15px; margin-top:20px; background:#12121a; color:#fff; border-top: 2px solid #00eaff; border-radius:8px;">
-  🚀 Hosted by <strong>
-    <a href="https://www.youtube.com/@TechZnoTalks" target="_blank" style="color:#00ffff; text-decoration:none;">
-      TechZnoTalks
-    </a>
-  </strong> — Empowering Smart Tools for Everyone.
-</footer>
+  <footer
+    style="text-align:center; padding:15px; margin-top:20px; background:#12121a; color:#fff; border-top: 2px solid #00eaff; border-radius:8px;">
+    🚀 Hosted by <strong>
+      <a href="https://www.youtube.com/@TechZnoTalks" target="_blank" style="color:#00ffff; text-decoration:none;">
+        TechZnoTalks
+      </a>
+    </strong> — Empowering Smart Tools for Everyone.
+  </footer>
 
   <div style="text-align: center; margin-top: 10px;">
     <a href="terms.html" target="_blank" style="text-decoration:none; color:#00eaff;">
-        Terms & Conditions
+      Terms & Conditions
     </a>
-</div>
+  </div>
 
 
 </body>
