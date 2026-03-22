@@ -22,7 +22,7 @@
             Have a question, suggestion, or feedback about <b>GlyphForge</b>? Send us a message below.
         </p>
 
-        <form action="mailto:techznotalks@gmail.com" method="post" enctype="text/plain">
+        <form id="contactForm" method="post" enctype="text/plain">
 
             <label style="display:block; margin-top:15px;">Your Name</label>
             <input type="text" name="name" required
@@ -37,8 +37,17 @@
                 style="width:100%; padding:10px; border-radius:5px; border:none; margin-top:5px;"></textarea>
 
             <div style="text-align:center; margin-top:25px;">
-                <button type="submit"
-                    style="background:#00d9ff; color:#000; padding:12px 25px; border:none; border-radius:6px; font-size:16px; cursor:pointer;">
+                <button type="submit" style="
+background: linear-gradient(90deg,#00ffd5,#ff2d6f);
+color:#04121c;
+padding:12px 28px;
+border:none;
+border-radius:10px;
+font-size:16px;
+font-weight:700;
+cursor:pointer;
+box-shadow:0 5px 20px rgba(0,255,213,0.25);
+transition:0.2s;">
                     Send Message
                 </button>
             </div>
@@ -63,6 +72,50 @@
         </div>
 
     </div>
+    <-- Popup Message -->
+        <div id="popup"
+            style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#00d9ff; color:#000; padding:15px 25px; border-radius:6px; box-shadow:0 0 10px rgba(0,0,0,0.5); z-index:1000;">
+            <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+
+            <script>
+                (function () {
+                    emailjs.init("I3af9em96R0xPL0cJ"); // 🔥 paste your public key here
+                })();
+
+                const form = document.getElementById('contactForm');
+
+                form.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    const name = this.querySelector('input[type="text"]').value;
+                    const email = this.querySelector('input[type="email"]').value;
+                    const message = this.querySelector('textarea').value;
+
+                    if (!name || !email || !message) {
+                        alert("Please fill all fields!");
+                        return;
+                    }
+
+                    emailjs.send("service_oo2f3se", "template_duquhxq", {
+                        name: name,
+                        email: email,
+                        message: message
+                    })
+                        .then(() => {
+                            const popup = document.getElementById('popup');
+                            popup.innerText = `✅ Thank you ${name}! Message sent successfully.`;
+                            popup.style.display = 'block';
+
+                            setTimeout(() => popup.style.display = 'none', 3000);
+                            form.reset();
+                        })
+                        .catch((error) => {
+                            alert("❌ Failed to send message. Try again.");
+                            console.error(error);
+                        });
+                });
+            </script>
+
 
 </body>
 
